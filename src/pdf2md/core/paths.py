@@ -69,6 +69,12 @@ def logo_path() -> Path:
     return resource_path("assets", "logo.png")
 
 
+def logo_mono_path(dark: bool) -> Path:
+    """Zeminsiz logo; koyu arayuzde beyaz, acik arayuzde siyah cizim."""
+    name = "logo-mono-light.png" if dark else "logo-mono-dark.png"
+    return resource_path("assets", name)
+
+
 _env_ready = False
 
 

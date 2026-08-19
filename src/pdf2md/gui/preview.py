@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from ..core.paths import logo_path
+from ..core.paths import logo_mono_path
 from ..i18n import tr
 from . import theme
 from .animations import SoftButton, fade_in
@@ -149,13 +149,13 @@ class PreviewPanel(QFrame):
 
     def _empty_html(self) -> str:
         """Bos durum: ortada logo ve tek satirlik aciklama."""
-        logo = logo_path()
+        logo = logo_mono_path(self._dark)
         if not logo.exists():
             return f'<p class="meta" align="center">{tr.PREVIEW_EMPTY}</p>'
         src = QUrl.fromLocalFile(str(logo)).toString()
         return (
-            f'<div align="center" style="margin-top:48px">'
-            f'<img src="{src}" width="56" height="56"/>'
+            f'<div align="center" style="margin-top:56px">'
+            f'<img src="{src}" width="52" height="52"/>'
             f'<p class="meta">{tr.PREVIEW_EMPTY}</p>'
             f"</div>"
         )

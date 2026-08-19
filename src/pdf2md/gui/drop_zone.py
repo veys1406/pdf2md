@@ -75,8 +75,11 @@ class DropZone(QFrame):
         hint = QLabel(tr.DROP_HINT)
         hint.setObjectName("dropHint")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        hint.setWordWrap(True)
-        title.setWordWrap(True)
+        # Sarma kapali: panel Ignored genislik politikasi kullandigi icin
+        # QLabel'lar en dar olcuye gore sariliyor ve tek satirlik metin ikiye
+        # bolunuyordu.
+        hint.setWordWrap(False)
+        title.setWordWrap(False)
 
         layout.addWidget(title)
         layout.addWidget(hint)
@@ -100,7 +103,7 @@ class DropZone(QFrame):
         self._hint.setVisible(not compact)
         self._title.setText(tr.DROP_TITLE_COMPACT if compact else tr.DROP_TITLE)
         # Dar yukseklikte iki satira sarilan metnin alti kesiliyordu.
-        self._title.setWordWrap(not compact)
+
         layout = self.layout()
         if compact:
             layout.setContentsMargins(24, 12, 24, 12)

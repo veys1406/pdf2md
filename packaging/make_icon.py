@@ -14,7 +14,8 @@ Uretilenler (assets/):
     icon.ico          exe ve pencere ikonu (16..256 px)
     logo.png          256 px, arayuzde ve README'de
     logo-large.png    512 px
-    logo-mono.png     512 px, zeminsiz beyaz (koyu yuzeyler icin)
+    logo-mono-light.png  512 px, zeminsiz beyaz (koyu arayuz icin)
+    logo-mono-dark.png   512 px, zeminsiz siyah (acik arayuz icin)
 """
 
 from __future__ import annotations
@@ -85,20 +86,20 @@ def _draw_mark(image: Image.Image, color: tuple[int, int, int, int]) -> None:
     )
 
 
-def build_logo(with_background: bool = True) -> Image.Image:
+def build_logo(with_background: bool = True, color=WHITE) -> Image.Image:
     image = Image.new("RGBA", (SIZE, SIZE), TRANSPARENT)
 
     if with_background:
         # Isaret once ayri bir katmana cizilip zemine yapistiriliyor: cerceve
         # oyugunun zemini delmesi gerekiyor.
         mark = Image.new("RGBA", (SIZE, SIZE), TRANSPARENT)
-        _draw_mark(mark, WHITE)
+        _draw_mark(mark, color)
         ImageDraw.Draw(image).rounded_rectangle(
             [(0, 0), (SIZE - 1, SIZE - 1)], radius=232, fill=BLACK
         )
         image.alpha_composite(mark)
     else:
-        _draw_mark(image, WHITE)
+        _draw_mark(image, color)
     return image
 
 
@@ -109,8 +110,13 @@ def main() -> None:
     logo.resize((512, 512), Image.LANCZOS).save(ASSETS / "logo-large.png")
     logo.resize((256, 256), Image.LANCZOS).save(ASSETS / "logo.png")
 
-    build_logo(with_background=False).resize((512, 512), Image.LANCZOS).save(
-        ASSETS / "logo-mono.png"
+    # Zeminsiz varyantlar: bos onizlemede filigran gibi kullaniliyor, bu yuzden
+    # koyu ve acik arayuz icin ayri ayri uretiliyor.
+    build_logo(with_background=False, color=WHITE).resize((512, 512), Image.LANCZOS).save(
+        ASSETS / "logo-mono-light.png"
+    )
+    build_logo(with_background=False, color=BLACK).resize((512, 512), Image.LANCZOS).save(
+        ASSETS / "logo-mono-dark.png"
     )
 
     # ICO: Windows kucuk boyutlarda kendi olceklemesini yapmak yerine gomulu
@@ -121,7 +127,13 @@ def main() -> None:
         sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
     )
 
-    for name in ("icon.ico", "logo.png", "logo-large.png", "logo-mono.png"):
+    for name in (
+        "icon.ico",
+        "logo.png",
+        "logo-large.png",
+        "logo-mono-light.png",
+        "logo-mono-dark.png",
+    ):
         path = ASSETS / name
         print(f"  {name:16s} {path.stat().st_size / 1024:6.1f} KB")
 

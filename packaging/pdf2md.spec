@@ -72,7 +72,10 @@ except Exception as exc:  # ag yoksa: uygulama karakter tahminine duser
     print(f"UYARI: tiktoken onbellegi gomulemedi ({exc}); token sayilari tahmini olacak.")
 
 # -- uygulama varliklari ---------------------------------------------------
-datas += [(str(ROOT / "assets" / name), "assets") for name in ("icon.ico", "logo.png")]
+datas += [
+    (str(ROOT / "assets" / name), "assets")
+    for name in ("icon.ico", "logo.png", "logo-mono-light.png", "logo-mono-dark.png")
+]
 
 # -- digerleri ------------------------------------------------------------
 add("pymupdf")

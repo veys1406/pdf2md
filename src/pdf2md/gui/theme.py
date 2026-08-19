@@ -72,6 +72,10 @@ QLabel#sectionLabel {{ color: {muted}; font-size: 10px; font-weight: 600;
 QLabel#dropTitle {{ font-size: 15px; font-weight: 500; letter-spacing: 0.3px; }}
 QLabel#dropHint {{ color: {muted}; font-size: 12px; }}
 QLabel#statTokens {{ font-size: 12px; color: {muted}; letter-spacing: 0.2px; }}
+/* Kart icindeki aciklama satiri: appSubtitle buyuk harf oldugu icin
+   model listesinde cumleler bagirir gibi gorunuyordu. */
+QLabel#cardDetail {{ color: {muted}; font-size: 12px; }}
+QLabel#cardTitle {{ font-weight: 600; }}
 
 /* -- kartlar -- */
 QFrame#card, QFrame#previewCard {{

@@ -27,3 +27,4 @@ desktop.ini
 # PyInstaller ara ciktilari
 packaging/build_cache/
 diag.txt
+docs/_ornek-cikti/

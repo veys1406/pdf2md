@@ -88,7 +88,7 @@ class OptionsPanel(QFrame):
             (tr.OPT_OCR_OFF, OcrMode.OFF),
             (tr.OPT_OCR_FORCE, OcrMode.FORCE),
         ):
-            self.ocr_combo.addItem(label, mode)
+            self.ocr_combo.addItem(label, mode.value)
         self.ocr_combo.currentIndexChanged.connect(self.changed)
 
         self.image_combo = QComboBox()
@@ -96,7 +96,7 @@ class OptionsPanel(QFrame):
             (tr.OPT_IMAGES_SAVE, ImageMode.REFERENCED),
             (tr.OPT_IMAGES_SKIP, ImageMode.SKIP),
         ):
-            self.image_combo.addItem(label, mode)
+            self.image_combo.addItem(label, mode.value)
         self.image_combo.currentIndexChanged.connect(self.changed)
 
         self.existing_combo = QComboBox()
@@ -105,7 +105,7 @@ class OptionsPanel(QFrame):
             (tr.OPT_EXISTING_OVERWRITE, ExistingFile.OVERWRITE),
             (tr.OPT_EXISTING_SKIP, ExistingFile.SKIP),
         ):
-            self.existing_combo.addItem(label, mode)
+            self.existing_combo.addItem(label, mode.value)
         self.existing_combo.currentIndexChanged.connect(self.changed)
 
         self.formula_check = QCheckBox(tr.OPT_FORMULA)
@@ -138,10 +138,12 @@ class OptionsPanel(QFrame):
 
     def set_options(self, opts: ConversionOptions) -> None:
         self.output_edit.setText(str(opts.output_dir) if opts.output_dir else "")
-        self.ocr_combo.setCurrentIndex(max(0, self.ocr_combo.findData(opts.ocr_mode)))
-        self.image_combo.setCurrentIndex(max(0, self.image_combo.findData(opts.image_mode)))
+        self.ocr_combo.setCurrentIndex(max(0, self.ocr_combo.findData(opts.ocr_mode.value)))
+        self.image_combo.setCurrentIndex(
+            max(0, self.image_combo.findData(opts.image_mode.value))
+        )
         self.existing_combo.setCurrentIndex(
-            max(0, self.existing_combo.findData(opts.existing_file))
+            max(0, self.existing_combo.findData(opts.existing_file.value))
         )
         self.formula_check.setChecked(opts.do_formula)
         self.frontmatter_check.setChecked(opts.frontmatter)
@@ -154,9 +156,11 @@ class OptionsPanel(QFrame):
         out = self.output_edit.text().strip()
         opts.output_dir = Path(out) if out else None
         opts.page_range = parse_pages(self.pages_edit.text())
-        opts.ocr_mode = self.ocr_combo.currentData()
-        opts.image_mode = self.image_combo.currentData()
-        opts.existing_file = self.existing_combo.currentData()
+        # Qt, str tabanli enum'lari QVariant'a koyup geri verirken duz str'e
+        # indirgiyor; enum'a burada geri cevrilmezse save_options patliyor.
+        opts.ocr_mode = OcrMode(self.ocr_combo.currentData())
+        opts.image_mode = ImageMode(self.image_combo.currentData())
+        opts.existing_file = ExistingFile(self.existing_combo.currentData())
         opts.do_formula = self.formula_check.isChecked()
         opts.frontmatter = self.frontmatter_check.isChecked()
         return opts

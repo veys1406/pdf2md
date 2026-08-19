@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from enum import Enum
+
 from PySide6.QtCore import QSettings
 
 from .options import ConversionOptions, ExistingFile, ImageMode, OcrMode
@@ -25,6 +27,11 @@ def _enum(cls, value, default):
         return cls(value)
     except (ValueError, TypeError):
         return default
+
+
+def _raw(value) -> str:
+    """Enum ya da duz str olabilen bir ayari QSettings'e yazilacak metne cevir."""
+    return value.value if isinstance(value, Enum) else str(value)
 
 
 def _bool(value, default: bool) -> bool:
@@ -53,10 +60,10 @@ def load_options() -> ConversionOptions:
 def save_options(opts: ConversionOptions) -> None:
     s = _settings()
     s.setValue("output_dir", str(opts.output_dir) if opts.output_dir else "")
-    s.setValue("existing_file", opts.existing_file.value)
+    s.setValue("existing_file", _raw(opts.existing_file))
     s.setValue("frontmatter", opts.frontmatter)
-    s.setValue("ocr_mode", opts.ocr_mode.value)
-    s.setValue("image_mode", opts.image_mode.value)
+    s.setValue("ocr_mode", _raw(opts.ocr_mode))
+    s.setValue("image_mode", _raw(opts.image_mode))
     s.setValue("do_formula", opts.do_formula)
 
 

@@ -11,7 +11,12 @@ import logging
 import sys
 from pathlib import Path
 
-from .core.converter import ConversionCancelled, Pdf2MdConverter, PdfReadError
+from .core.converter import (
+    ConversionCancelled,
+    OutputError,
+    Pdf2MdConverter,
+    PdfReadError,
+)
 from .core.options import ConversionOptions, ExistingFile, ImageMode, OcrMode
 from .core.tokens import format_tokens, page_image_tokens, savings_percent
 
@@ -122,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
             print("  iptal edildi")
             failed += 1
             continue
-        except (PdfReadError, OSError) as exc:
+        except (PdfReadError, OutputError, OSError) as exc:
             print(f"  HATA: {exc}")
             failed += 1
             continue

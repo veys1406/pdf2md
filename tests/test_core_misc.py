@@ -4,7 +4,7 @@ import pytest
 
 from pdf2md.cli import parse_page_range
 from pdf2md.core import tokens
-from pdf2md.core.converter import resolve_output_path
+from pdf2md.core.converter import OutputError, resolve_output_path
 from pdf2md.core.options import ConversionOptions, ExistingFile
 
 
@@ -76,6 +76,28 @@ def test_atla_politikasi_none_dondurur(tmp_path):
     pdf.touch()
     (tmp_path / "ders.md").touch()
     assert resolve_output_path(pdf, ConversionOptions(existing_file=ExistingFile.SKIP)) is None
+
+
+def test_cikti_klasoru_bir_dosyaysa_anlasilir_hata(tmp_path):
+    """Kullanici cikti olarak dosya secerse 'beklenmeyen hata' gormemeli."""
+    pdf = tmp_path / "ders.pdf"
+    pdf.touch()
+    engel = tmp_path / "aslinda-dosya"
+    engel.write_text("x", encoding="utf-8")
+
+    with pytest.raises(OutputError, match="Çıktı klasörü"):
+        resolve_output_path(pdf, ConversionOptions(output_dir=engel))
+
+
+def test_999_kopya_dolduysa_hata_verir(tmp_path, monkeypatch):
+    pdf = tmp_path / "ders.pdf"
+    pdf.touch()
+    (tmp_path / "ders.md").touch()
+    # Her ismi "var" gostererek bos isim aramasini tuketiyoruz.
+    monkeypatch.setattr("pathlib.Path.exists", lambda self: True)
+
+    with pytest.raises(OutputError):
+        resolve_output_path(pdf, ConversionOptions(existing_file=ExistingFile.RENAME))
 
 
 # -- sayfa araligi --------------------------------------------------------

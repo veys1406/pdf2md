@@ -15,6 +15,7 @@ from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 from ..core.converter import (
     ConversionCancelled,
     ConversionResult,
+    OutputError,
     Pdf2MdConverter,
     PdfReadError,
 )
@@ -70,7 +71,7 @@ class ConversionWorker(QRunnable):
                 self.signals.finished.emit(row, result)
             except ConversionCancelled:
                 self.signals.cancelled.emit(row)
-            except PdfReadError as exc:
+            except (PdfReadError, OutputError) as exc:
                 self.signals.failed.emit(row, str(exc))
             except Exception as exc:  # beklenmedik hata: kuyruk durmasin
                 log.error("Beklenmeyen donusum hatasi: %s\n%s", exc, traceback.format_exc())

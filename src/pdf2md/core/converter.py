@@ -31,6 +31,10 @@ class PdfReadError(Exception):
     """PDF acilamadi: bozuk, sifreli veya desteklenmeyen dosya."""
 
 
+class OutputError(Exception):
+    """Cikti yazilamadi: klasor olusturulamiyor, dosya kilitli veya disk dolu."""
+
+
 @dataclass
 class ConversionResult:
     source: Path
@@ -117,7 +121,11 @@ def extract_raw_text(path: Path, page_range: tuple[int, int] | None = None) -> s
 def resolve_output_path(source: Path, opts: ConversionOptions) -> Path | None:
     """Cikti .md yolunu belirle. `SKIP` politikasinda dosya varsa None doner."""
     out_dir = opts.output_dir or source.parent
-    out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        # Ornek: secilen yol aslinda bir dosya, ag suruculu yol erisilemiyor.
+        raise OutputError(f"Çıktı klasörü oluşturulamadı ({out_dir}): {exc}") from exc
     target = out_dir / f"{source.stem}.md"
 
     if not target.exists():
@@ -131,7 +139,7 @@ def resolve_output_path(source: Path, opts: ConversionOptions) -> Path | None:
         candidate = out_dir / f"{source.stem}-{i}.md"
         if not candidate.exists():
             return candidate
-    raise PdfReadError("Cikti dosyasi icin bos isim bulunamadi.")
+    raise OutputError("Çıktı dosyası için boş isim bulunamadı (999 kopya var).")
 
 
 class Pdf2MdConverter:
@@ -297,7 +305,11 @@ class Pdf2MdConverter:
         check_cancel()
 
         progress(95, "Dosya yaziliyor")
-        target.write_text(md, encoding="utf-8")
+        try:
+            target.write_text(md, encoding="utf-8")
+        except OSError as exc:
+            # Ornek: .md dosyasi baska bir programda acik, disk dolu, salt okunur klasor.
+            raise OutputError(f"Markdown yazılamadı ({target.name}): {exc}") from exc
 
         from . import tokens
 

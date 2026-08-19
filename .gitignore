@@ -23,3 +23,6 @@ samples/
 .idea/
 Thumbs.db
 desktop.ini
+
+# PyInstaller ara ciktilari
+packaging/build_cache/

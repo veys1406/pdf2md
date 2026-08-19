@@ -50,7 +50,10 @@ class ConversionOptions:
     repeated_image_min_pages: int = 3      # en az bu kadar farkli sayfada gorunmeli
 
     # Zenginlestirme (ek model indirir, yavaslatir)
-    do_formula: bool = True   # formul goruntulerini LaTeX'e cevir
+    # VARSAYILAN KAPALI: CodeFormulaV2 modeli CPU'da cok yavas -- 8 sayfalik bir
+    # belge 50 dakikadan uzun surdu ve bitmedi. Olculup hizlandirilana kadar
+    # kullanici bilerek acmali.
+    do_formula: bool = False  # formul goruntulerini LaTeX'e cevir
     do_code: bool = False     # kod bloklarini dil etiketiyle isaretle
     do_tables: bool = True    # TableFormer ile tablo yapisi cikar
 

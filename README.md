@@ -9,8 +9,45 @@ Kurulum gerektirmez, çalışırken internete ihtiyaç duymaz, dosyaların bilgi
 
 ---
 
+## Bilgisayarıma nasıl kurarım?
+
+**Windows 10/11 (64 bit) gerekir. Python, kurulum sihirbazı veya yönetici şifresi gerekmez.**
+
+### 1. İndir
+
+[**⬇ pdf2md-0.1.0-windows.exe**](https://github.com/veys1406/pdf2md/releases/latest) —
+273 MB. (Bu sayfanın sağındaki **Releases** bölümünden de ulaşabilirsin.)
+
+### 2. Aç
+
+İndirdiğin dosyaya **çift tıkla**. Kendi kendine açılan bir arşivdir: nereye açılacağını
+sorar, örneğin `C:\Programlar` yaz ve **Extract**'e bas. Yaklaşık 1 GB dosya açılır.
+
+Windows *"Bilgisayarınız korundu"* uyarısı verirse → **Ek bilgi** → **Yine de çalıştır**.
+(Uygulama imzasız olduğu için çıkar, zararlı olduğu anlamına gelmez.)
+
+### 3. Çalıştır
+
+Oluşan `pdf2md` klasöründeki **`pdf2md.exe`** dosyasına çift tıkla. İlk açılışta gelen
+pencerede **İndir**'e bas: yapay zekâ modelleri bir kez iner (628 MB, 5–20 dakika).
+Bundan sonra program internetsiz de çalışır.
+
+### 4. Kullan
+
+PDF'lerini pencereye sürükleyip **Dönüştür**'e bas. Her PDF'in yanında aynı isimde bir
+`.md` dosyası oluşur.
+
+> Silmek istersen: açtığın `pdf2md` klasörünü ve `%LOCALAPPDATA%\pdf2md` klasörünü sil.
+> Kayıt defterine veya sistem klasörlerine hiçbir şey yazılmaz.
+
+Her adımın ekran görüntülü ayrıntısı aşağıda. Kaynak koddan çalıştırmak istersen
+[Geliştiriciler için](#geliştiriciler-için) bölümüne bak.
+
+---
+
 ## İçindekiler
 
+- [Bilgisayarıma nasıl kurarım?](#bilgisayarıma-nasıl-kurarım) ← **buradan başla**
 - [Bu program ne işe yarar?](#bu-program-ne-işe-yarar)
 - [1. Adım: İndirme](#1-adım-indirme)
 - [2. Adım: Açma](#2-adım-açma)
@@ -252,15 +289,37 @@ aradaki oran yine de doğru bir fikir verir.
 
 ## Geliştiriciler için
 
-Python 3.12 ve [uv](https://docs.astral.sh/uv/) gerekir.
+### Kaynak koddan çalıştırma
+
+Hazır exe yerine kodu kendin çalıştırmak istersen (veya Windows dışında denemek istersen):
 
 ```powershell
+# 1. Gerekli araçlar: git ve uv
+winget install Git.Git
+winget install astral-sh.uv
+# (PowerShell'i kapatıp yeniden aç — PATH güncellensin)
+
+# 2. Depoyu indir
+git clone https://github.com/veys1406/pdf2md.git
+cd pdf2md
+
+# 3. Bağımlılıkları kur (Python 3.12 dahil, uv kendisi indirir — birkaç dakika, ~3 GB)
 uv sync --extra dev
-uv run python -m pdf2md                       # arayüzü aç
+
+# 4. Modelleri indir (628 MB, tek seferlik) ve arayüzü aç
+uv run python -m pdf2md.cli --modelleri-indir
+uv run python -m pdf2md
+```
+
+Diğer komutlar:
+
+```powershell
 uv run pytest -q                              # testler
 uv run python -m pdf2md.cli belge.pdf --cikti C:\ciktilar --sayfa 1-10
-uv run python -m pdf2md.cli --modelleri-indir # modelleri indir ve çık
 ```
+
+> Linux/macOS'ta çekirdek motor ve komut satırı çalışır; arayüz de açılır ama paketleme
+> betikleri ve SFX dağıtımı yalnızca Windows içindir.
 
 Paketleme, logo ve ekran görüntüleri:
 

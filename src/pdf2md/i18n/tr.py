@@ -93,9 +93,57 @@ CONFIRM_CANCEL_TITLE = "İptal"
 # -- menu / ayarlar -------------------------------------------------------
 MENU_THEME_DARK = "Koyu tema"
 MENU_THEME_LIGHT = "Açık tema"
+MENU_MODELS = "Modeller…"
 MENU_ABOUT = "Hakkında"
 ABOUT_TEXT = (
     "pdf2md — PDF dosyalarını LLM dostu Markdown'a çevirir.\n\n"
     "Tamamen bilgisayarında çalışır, hiçbir veri dışarı gönderilmez.\n"
     "Docling + PyMuPDF + EasyOCR ile geliştirildi."
+)
+
+# -- model sihirbazi ------------------------------------------------------
+MODELS_TITLE = "Modeller"
+MODELS_FIRST_RUN_TITLE = "İlk kurulum"
+MODELS_INTRO = (
+    "pdf2md dönüştürmeyi tamamen kendi bilgisayarında yapar. Bunun için yapay "
+    "zekâ modellerinin bir kez indirilmesi gerekiyor. İndirme bittikten sonra "
+    "internet bağlantısına ihtiyaç kalmaz."
+)
+MODELS_INTRO_DONE = (
+    "Zorunlu modeller kurulu, dönüştürmeye hazırsın. İstersen isteğe bağlı "
+    "modelleri de indirebilirsin."
+)
+MODELS_INSTALLED = "Kurulu"
+MODELS_REQUIRED = "Bu model olmadan dönüştürme yapılamaz"
+MODELS_OPTIONAL = "İsteğe bağlı"
+MODELS_ALL_READY = "İndirilecek yeni model yok"
+MODELS_STARTING = "İndirme başlatılıyor…"
+MODELS_DONE = "Modeller hazır ✓"
+MODELS_CANCELLED = "İndirme iptal edildi. Yarım inen dosyalar korundu, sonra kaldığı yerden devam eder."
+MODELS_CANCEL_HINT = "İptal ediliyor… Sürmekte olan model bittiğinde duracak."
+
+BTN_DOWNLOAD = "İndir"
+BTN_LATER = "Şimdi değil"
+BTN_CLOSE = "Kapat"
+
+
+def models_total(count: int, size: str) -> str:
+    return f"{count} model · toplam {size}"
+
+
+def models_location(path: str) -> str:
+    return f"İndirme konumu: {path}"
+
+
+def models_downloading(title: str) -> str:
+    return f"İndiriliyor: {title}…"
+
+
+def models_error(message: str) -> str:
+    return f"İndirme başarısız — {message}\nBağlantını kontrol edip tekrar dene."
+
+
+MODELS_MISSING_TITLE = "Modeller eksik"
+MODELS_MISSING_ASK = (
+    "Dönüştürme için gereken modeller henüz inmedi. Şimdi indirilsin mi?"
 )

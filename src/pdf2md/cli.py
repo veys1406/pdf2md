@@ -33,7 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="pdf2md",
         description="PDF dosyalarini LLM dostu Markdown'a cevirir.",
     )
-    p.add_argument("pdf", nargs="+", type=Path, help="Cevrilecek PDF dosyalari")
+    p.add_argument("pdf", nargs="*", type=Path, help="Cevrilecek PDF dosyalari")
+    p.add_argument(
+        "--modelleri-indir",
+        action="store_true",
+        help="Gerekli modelleri indirip cik (ilk kurulum / paketleme testi)",
+    )
     p.add_argument("--cikti", type=Path, default=None, help="Cikti klasoru (varsayilan: PDF'in yani)")
     p.add_argument("--sayfa", default=None, help="Sayfa araligi, orn. 5-20")
     p.add_argument(
@@ -43,11 +48,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="OCR modu (varsayilan: auto)",
     )
     p.add_argument("--gorsel-yok", action="store_true", help="Gorselleri tamamen atla")
-    p.add_argument("--formul-yok", action="store_true", help="Formul -> LaTeX donusumunu kapat")
+    # Varsayilan KAPALI: CodeFormulaV2 CPU'da bir belgeyi saatlerce isleyebiliyor.
+    p.add_argument("--formul", action="store_true", help="Formulleri LaTeX'e cevir (cok yavas)")
     p.add_argument("--frontmatter-yok", action="store_true", help="YAML frontmatter ekleme")
     p.add_argument("--uzerine-yaz", action="store_true", help="Var olan .md dosyasinin uzerine yaz")
     p.add_argument("-v", "--ayrintili", action="store_true", help="Ayrintili gunluk")
     return p
+
+
+def download_models_cli(with_formula: bool = False) -> int:
+    """Modelleri indir ve durumu yazdir. Arayuzsuz ilk kurulum icin."""
+    from .core import models
+
+    models.migrate_legacy_easyocr()
+    wanted = [s for s in models.SPECS if s.required or (with_formula and s.key == "formula")]
+    todo = [s for s in wanted if not models.is_installed(s)]
+
+    for s in wanted:
+        durum = "kurulu" if models.is_installed(s) else "eksik"
+        print(f"  {s.key:8s} {models.format_size(s.approx_bytes):>8s}  {durum}")
+
+    if not todo:
+        print("Tum modeller hazir.")
+        return 0
+
+    print(f"\n{len(todo)} model indirilecek (~{models.format_size(models.total_bytes(todo))})...")
+    try:
+        models.download_all(todo, on_status=lambda s: print(f"  indiriliyor: {s.title}", flush=True))
+    except models.ModelDownloadError as exc:
+        print(f"HATA: {exc}")
+        return 1
+    print("Modeller hazir.")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,12 +89,20 @@ def main(argv: list[str] | None = None) -> int:
         format="%(levelname)s %(name)s: %(message)s",
     )
 
+    if args.modelleri_indir:
+        return download_models_cli(with_formula=args.formul)
+
+    if not args.pdf:
+        build_parser().print_usage()
+        print("Hata: cevrilecek en az bir PDF verin (veya --modelleri-indir).")
+        return 2
+
     opts = ConversionOptions(
         output_dir=args.cikti,
         page_range=parse_page_range(args.sayfa),
         ocr_mode=OcrMode(args.ocr),
         image_mode=ImageMode.SKIP if args.gorsel_yok else ImageMode.REFERENCED,
-        do_formula=not args.formul_yok,
+        do_formula=args.formul,
         frontmatter=not args.frontmatter_yok,
         existing_file=ExistingFile.OVERWRITE if args.uzerine_yaz else ExistingFile.RENAME,
     )

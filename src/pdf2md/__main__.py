@@ -34,6 +34,16 @@ def _setup_logging() -> None:
 def main() -> int:
     _setup_logging()
 
+    # EASYOCR_MODULE_PATH eklenmeden onceki surumler modelleri ~/.EasyOCR'a
+    # indirmisti; 98 MB'i yeniden indirtmemek icin bir kez tasinir.
+    from .core.models import migrate_legacy_easyocr
+
+    try:
+        if migrate_legacy_easyocr():
+            logging.getLogger(__name__).info("EasyOCR modelleri uygulama klasörüne taşındı.")
+    except Exception:
+        logging.getLogger(__name__).warning("EasyOCR modelleri taşınamadı.", exc_info=True)
+
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication
 

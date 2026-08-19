@@ -30,6 +30,20 @@ def logs_dir() -> Path:
     return app_data_dir() / "logs"
 
 
+def hf_cache_dir() -> Path:
+    """huggingface_hub'in model onbellegi (HF_HOME/hub)."""
+    return models_dir() / "hub"
+
+
+def easyocr_dir() -> Path:
+    """EasyOCR .pth dosyalarinin kok dizini (EASYOCR_MODULE_PATH).
+
+    EasyOCR huggingface'i kullanmiyor; ayarlanmazsa modelleri ~/.EasyOCR
+    altina, yani kullanicinin ev dizinine indirir.
+    """
+    return models_dir() / "easyocr"
+
+
 def is_frozen() -> bool:
     """PyInstaller ile paketlenmis halde mi calisiyoruz?"""
     return getattr(sys, "frozen", False)
@@ -55,6 +69,10 @@ def ensure_env() -> None:
     os.environ.setdefault("TRANSFORMERS_CACHE", str(models / "transformers"))
     # Telemetriyi kapat: uygulama tamamen offline calisabilmeli
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+    # EasyOCR'in kendi onbellegi: easyocr.config import edildiginde okundugu icin
+    # bu satir da her import'tan once calismali.
+    easyocr_dir().mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("EASYOCR_MODULE_PATH", str(easyocr_dir()))
     # NOT: DOCLING_ARTIFACTS_PATH bilerek ayarlanmiyor; dolu olmayan bir klasoru
     # gosterdiginde docling hata veriyor. HF_HOME zaten modelleri buraya indiriyor.
     # torch'un CPU cekirdek sayisini sinirla: arayuz donmasin

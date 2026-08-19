@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QThreadPool, Slot
+from PySide6.QtCore import Qt, QThreadPool, QTimer, Slot
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..core import models
 from ..core import settings as app_settings
 from ..core.converter import Pdf2MdConverter
 from ..core.tokens import format_tokens, page_image_tokens, savings_percent
@@ -30,6 +31,7 @@ from .drop_zone import DropZone, collect_pdfs
 from .options_panel import OptionsPanel
 from .preview import PreviewPanel
 from .queue_view import JobState, QueueTable
+from .setup_wizard import ModelsDialog
 from .worker import ConversionWorker
 
 log = logging.getLogger(__name__)
@@ -48,11 +50,55 @@ class MainWindow(QMainWindow):
         self._pool = QThreadPool()
         self._pool.setMaxThreadCount(1)  # kuyruk sirayla islenir
         self._worker: ConversionWorker | None = None
+        self._models_checked = False
 
         self._build_ui()
         self._apply_theme()
         self._restore_geometry()
         self._update_actions()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._models_checked:
+            self._models_checked = True
+            # Pencere cizildikten sonra ac: sihirbaz bos bir ekranin ustunde
+            # acilmasin.
+            QTimer.singleShot(120, self._check_models_on_start)
+
+    def _check_models_on_start(self) -> None:
+        """Ilk acilista zorunlu modeller eksikse sihirbazi goster."""
+        if not models.missing():
+            return
+        ModelsDialog(self, first_run=True).exec()
+        self._update_actions()
+
+    def _open_models_dialog(self, first_run: bool = False) -> None:
+        ModelsDialog(self, first_run=first_run).exec()
+        self._update_actions()
+
+    def _ensure_models(self) -> bool:
+        """Donusum icin gereken modeller yoksa kullaniciya indirmeyi teklif et.
+
+        Formul modeli yalnizca secenek aciksa gerekli; kapaliyken eksik olmasi
+        donusumu engellemez.
+        """
+        needed = models.missing()
+        if self.options_panel.options(self._opts).do_formula:
+            formula = models.spec("formula")
+            if not models.is_installed(formula):
+                needed.append(formula)
+        if not needed:
+            return True
+
+        answer = QMessageBox.question(
+            self, tr.MODELS_MISSING_TITLE, tr.MODELS_MISSING_ASK,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if answer is not QMessageBox.StandardButton.Yes:
+            return False
+
+        self._open_models_dialog()
+        return all(models.is_installed(s) for s in needed)
 
     # -- kurulum -------------------------------------------------------
 
@@ -184,6 +230,12 @@ class MainWindow(QMainWindow):
 
     def _show_menu(self) -> None:
         menu = QMenu(self)
+        models_action = QAction(tr.MENU_MODELS, menu)
+        models_action.triggered.connect(lambda: self._open_models_dialog())
+        models_action.setEnabled(self._worker is None)
+        menu.addAction(models_action)
+        menu.addSeparator()
+
         about = QAction(tr.MENU_ABOUT, menu)
         about.triggered.connect(
             lambda: QMessageBox.information(self, tr.MENU_ABOUT, tr.ABOUT_TEXT)
@@ -240,6 +292,9 @@ class MainWindow(QMainWindow):
     def _start_conversion(self) -> None:
         if not self.options_panel.pages_valid():
             QMessageBox.warning(self, tr.OPT_PAGES, tr.OPT_PAGES_PLACEHOLDER)
+            return
+
+        if not self._ensure_models():
             return
 
         self._opts = self.options_panel.options(self._opts)

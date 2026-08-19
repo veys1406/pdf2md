@@ -8,6 +8,7 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from pdf2md.i18n import tr  # noqa: E402
 from pdf2md.gui.preview import render_markdown, split_frontmatter  # noqa: E402
 
 MD = """---
@@ -69,14 +70,26 @@ def test_tema_degisimi_icerigi_kaybetmez(panel):
 def test_bos_panelde_tema_degisimi_cokmez(panel):
     panel.clear()
     panel.set_dark(False)
-    assert panel.html_view.toPlainText().strip() == ""
+    assert tr.PREVIEW_EMPTY in panel.html_view.toPlainText()
 
 
 def test_temizleme_kaynagi_da_unutur(panel):
+    """Temizlemeden sonra tema degisirse eski belge geri gelmemeli."""
     panel.show_markdown(MD, None, "bilgi")
     panel.clear()
     panel.set_dark(True)
-    assert panel.html_view.toPlainText().strip() == ""
+
+    assert panel._md == ""
+    assert "Başlık" not in panel.html_view.toPlainText()
+    assert tr.PREVIEW_EMPTY in panel.html_view.toPlainText()
+
+
+def test_bos_durumda_logo_gosterilir(panel):
+    from pdf2md.core.paths import logo_path
+
+    panel.clear()
+    if logo_path().exists():
+        assert "img" in panel.html_view.toHtml()
 
 
 # -- saf yardimcilar -------------------------------------------------------

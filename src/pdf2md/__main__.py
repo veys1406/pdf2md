@@ -31,6 +31,20 @@ def _setup_logging() -> None:
     )
 
 
+def _set_taskbar_identity() -> None:
+    """Gorev cubugunda kendi ikonumuzla, python.exe'den ayri gorunelim.
+
+    Windows uygulamalari AppUserModelID'ye gore grupluyor; ayarlanmazsa
+    gelistirme ortaminda pencere Python'un genel ikonuyla listeleniyor.
+    """
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("veys1406.pdf2md")
+    except Exception:
+        pass
+
+
 def main() -> int:
     _setup_logging()
 
@@ -45,6 +59,7 @@ def main() -> int:
         logging.getLogger(__name__).warning("EasyOCR modelleri taşınamadı.", exc_info=True)
 
     from PySide6.QtCore import Qt
+    from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QApplication
 
     QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -53,6 +68,13 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("pdf2md")
     app.setOrganizationName("pdf2md")
+
+    from .core.paths import icon_path
+
+    icon_file = icon_path()
+    if icon_file.exists():
+        app.setWindowIcon(QIcon(str(icon_file)))
+    _set_taskbar_identity()
 
     from .gui.main_window import MainWindow
 

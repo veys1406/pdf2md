@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThreadPool, QTimer, Slot
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtGui import QAction, QIcon, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 from ..core import models
 from ..core import settings as app_settings
 from ..core.converter import Pdf2MdConverter
+from ..core.paths import icon_path, logo_path, logs_dir
 from ..core.tokens import format_tokens, page_image_tokens, savings_percent
 from ..i18n import tr
 from . import theme
@@ -48,6 +49,10 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(tr.APP_TITLE)
+        # QApplication ikonu __main__'de veriliyor; pencere kendi ikonunu da
+        # ayarliyor ki testte/demoda dogrudan acildiginda da dogru gorunsun.
+        if icon_path().exists():
+            self.setWindowIcon(QIcon(str(icon_path())))
         self.setMinimumSize(760, 520)
         self._size_to_screen()
 
@@ -61,6 +66,7 @@ class MainWindow(QMainWindow):
         self._shown_once = False
 
         self._build_ui()
+        self._install_shortcuts()
         self._apply_theme()
         self._restore_geometry()
         self._update_actions()
@@ -138,6 +144,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._build_header())
 
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.splitter.setHandleWidth(22)
         self.splitter.addWidget(self._build_left())
         self.splitter.addWidget(self._build_right())
         self.splitter.setStretchFactor(0, 3)
@@ -248,6 +255,20 @@ class MainWindow(QMainWindow):
         bar.addWidget(self.convert_btn)
         return bar
 
+    def _install_shortcuts(self) -> None:
+        """Klavye kisayollari. Menude `Klavye kisayollari` ile listeleniyor."""
+        for keys, handler in (
+            (QKeySequence.StandardKey.Open, self._pick_files),
+            ("Ctrl+Shift+O", self._pick_folder),
+            ("Ctrl+Return", self._start_conversion),
+            ("Ctrl+Enter", self._start_conversion),
+            ("Esc", self._cancel_conversion),
+            ("Ctrl+L", self._clear_queue),
+            ("Ctrl+M", self._open_models_dialog),
+            ("F1", self._show_about),
+        ):
+            QShortcut(QKeySequence(keys), self, activated=handler)
+
     # -- tema / ayarlar -------------------------------------------------
 
     def _apply_theme(self) -> None:
@@ -274,15 +295,52 @@ class MainWindow(QMainWindow):
         models_action = QAction(tr.MENU_MODELS, menu)
         models_action.triggered.connect(lambda: self._open_models_dialog())
         models_action.setEnabled(self._worker is None)
+        models_action.setShortcut(QKeySequence("Ctrl+M"))
         menu.addAction(models_action)
+
+        logs_action = QAction(tr.MENU_LOGS, menu)
+        logs_action.triggered.connect(self._open_logs)
+        menu.addAction(logs_action)
+
+        shortcuts_action = QAction(tr.MENU_SHORTCUTS, menu)
+        shortcuts_action.triggered.connect(
+            lambda: QMessageBox.information(self, tr.MENU_SHORTCUTS, tr.SHORTCUTS_TEXT)
+        )
+        menu.addAction(shortcuts_action)
         menu.addSeparator()
 
         about = QAction(tr.MENU_ABOUT, menu)
-        about.triggered.connect(
-            lambda: QMessageBox.information(self, tr.MENU_ABOUT, tr.ABOUT_TEXT)
-        )
+        about.setShortcut(QKeySequence("F1"))
+        about.triggered.connect(self._show_about)
         menu.addAction(about)
         menu.exec(self.menu_btn.mapToGlobal(self.menu_btn.rect().bottomLeft()))
+
+    def _open_logs(self) -> None:
+        """Gunluk klasorunu Gezgin'de ac (hata bildirimi kolaylassin)."""
+        import subprocess
+
+        try:
+            logs_dir().mkdir(parents=True, exist_ok=True)
+            subprocess.run(["explorer", str(logs_dir())], check=False)
+        except OSError as exc:
+            log.warning("Günlük klasörü açılamadı: %s", exc)
+
+    def _show_about(self) -> None:
+        box = QMessageBox(self)
+        box.setWindowTitle(tr.MENU_ABOUT)
+        box.setText(tr.ABOUT_TEXT)
+
+        logo = logo_path()
+        if logo.exists():
+            box.setIconPixmap(
+                QPixmap(str(logo)).scaled(
+                    72,
+                    72,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+        box.exec()
 
     def _on_options_changed(self) -> None:
         self._opts = self.options_panel.options(self._opts)

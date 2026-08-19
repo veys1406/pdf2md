@@ -71,6 +71,9 @@ try:
 except Exception as exc:  # ag yoksa: uygulama karakter tahminine duser
     print(f"UYARI: tiktoken onbellegi gomulemedi ({exc}); token sayilari tahmini olacak.")
 
+# -- uygulama varliklari ---------------------------------------------------
+datas += [(str(ROOT / "assets" / name), "assets") for name in ("icon.ico", "logo.png")]
+
 # -- digerleri ------------------------------------------------------------
 add("pymupdf")
 hiddenimports += ["markdown_it", "mdit_py_plugins", "PIL._tkinter_finder"]
@@ -126,7 +129,7 @@ exe = EXE(
     upx=False,          # UPX torch DLL'lerini bozuyor
     console=False,      # pencere modu: konsol acilmasin
     disable_windowed_traceback=False,
-    icon=None,
+    icon=str(ROOT / "assets" / "icon.ico"),
 )
 
 coll = COLLECT(

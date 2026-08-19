@@ -133,7 +133,7 @@ class DropZone(QFrame):
 
         rect = QRectF(self.rect()).adjusted(1.0, 1.0, -1.0, -1.0)
         path = QPainterPath()
-        path.addRoundedRect(rect, 16.0, 16.0)
+        path.addRoundedRect(rect, 18.0, 18.0)
 
         bg = mix(c.get("drop_bg", "#101011"), c.get("surface2", "#1a1a1c"), self._glow)
         painter.fillPath(path, bg)

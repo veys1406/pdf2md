@@ -11,6 +11,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QTimer, QUrl, Qt
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
@@ -18,9 +19,9 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QTextBrowser,
     QVBoxLayout,
-    QWidget,
 )
 
+from ..core.paths import logo_path
 from ..i18n import tr
 from . import theme
 from .animations import SoftButton, fade_in
@@ -61,11 +62,16 @@ def render_markdown(md: str) -> str:
         return "<pre>" + md.replace("&", "&amp;").replace("<", "&lt;") + "</pre>"
 
 
-class PreviewPanel(QWidget):
-    """Sekmeli onizleme: render edilmis HTML ve ham markdown."""
+class PreviewPanel(QFrame):
+    """Sekmeli onizleme: render edilmis HTML ve ham markdown.
+
+    Panelin tamami tek bir yuvarlak kart; icindeki metin gorunumleri kendi
+    cercevelerini cizmez (bkz. theme.QFrame#previewCard kurallari).
+    """
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.setObjectName("previewCard")
         self._dark = True
         self._md_path: Path | None = None
         self._md = ""
@@ -107,10 +113,15 @@ class PreviewPanel(QWidget):
         bar.addWidget(self.info)
         bar.addLayout(buttons)
 
+        hairline = QLabel()
+        hairline.setObjectName("hairline")
+        hairline.setFixedHeight(1)
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(16, 12, 16, 14)
         layout.setSpacing(10)
         layout.addWidget(self.tabs, 1)
+        layout.addWidget(hairline)
         layout.addLayout(bar)
 
         # Metin gorunumleri ve sekme cubugu kendi genisliklerini dayatinca panel
@@ -134,15 +145,29 @@ class PreviewPanel(QWidget):
         if self._md:
             self.show_markdown(self._md, self._md_path, self._info, animate=False)
         else:
-            self.html_view.setHtml("")
+            self.html_view.setHtml(self._empty_html())
+
+    def _empty_html(self) -> str:
+        """Bos durum: ortada logo ve tek satirlik aciklama."""
+        logo = logo_path()
+        if not logo.exists():
+            return f'<p class="meta" align="center">{tr.PREVIEW_EMPTY}</p>'
+        src = QUrl.fromLocalFile(str(logo)).toString()
+        return (
+            f'<div align="center" style="margin-top:48px">'
+            f'<img src="{src}" width="56" height="56"/>'
+            f'<p class="meta">{tr.PREVIEW_EMPTY}</p>'
+            f"</div>"
+        )
 
     def clear(self) -> None:
         self._md_path = None
         self._md = ""
         self._info = ""
-        self.html_view.setHtml("")
+        self.html_view.document().setDefaultStyleSheet(theme.preview_css(self._dark))
+        self.html_view.setHtml(self._empty_html())
         self.raw_view.setPlainText("")
-        self.info.setText(tr.PREVIEW_EMPTY)
+        self.info.setText("")
         self.copy_btn.setEnabled(False)
         self.folder_btn.setEnabled(False)
 

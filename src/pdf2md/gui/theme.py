@@ -72,14 +72,24 @@ QLabel#sectionLabel {{ color: {muted}; font-size: 10px; font-weight: 600;
 QLabel#dropTitle {{ font-size: 15px; font-weight: 500; letter-spacing: 0.3px; }}
 QLabel#dropHint {{ color: {muted}; font-size: 12px; }}
 QLabel#statTokens {{ font-size: 12px; color: {muted}; letter-spacing: 0.2px; }}
-QLabel#hairline {{ background: {border}; }}
 
 /* -- kartlar -- */
-QFrame#card {{
+QFrame#card, QFrame#previewCard {{
     background: {surface};
     border: 1px solid {border};
-    border-radius: 14px;
+    border-radius: 18px;
 }}
+
+/* Kartin icindeki metin gorunumleri kendi cercevesini cizmesin: ic ice iki
+   yuvarlak kenarlik kotu duruyor. */
+QFrame#previewCard QTextBrowser,
+QFrame#previewCard QPlainTextEdit {{
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 4px 2px;
+}}
+QLabel#hairline {{ background: {border}; max-height: 1px; }}
 
 /* Birakma alani animations.DropZone tarafindan elle ciziliyor. */
 QFrame#dropZone {{ background: transparent; border: none; }}
@@ -90,7 +100,7 @@ QFrame#dropZone {{ background: transparent; border: none; }}
 QPushButton {{
     background: {surface2};
     border: 1px solid {border};
-    border-radius: 9px;
+    border-radius: 11px;
     padding: 7px 14px;
 }}
 QPushButton:hover {{ background: {surface3}; }}
@@ -100,8 +110,8 @@ QPushButton:disabled {{ color: {disabled}; }}
 QLineEdit, QComboBox, QSpinBox {{
     background: {surface};
     border: 1px solid {border};
-    border-radius: 9px;
-    padding: 7px 11px;
+    border-radius: 11px;
+    padding: 8px 12px;
     selection-background-color: {accent};
     selection-color: {on_accent};
 }}
@@ -199,7 +209,8 @@ QScrollBar::handle:horizontal:hover {{ background: {border_strong}; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
 QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 
-QSplitter::handle {{ background: transparent; width: 14px; }}
+/* Iki panel dip dibe durmasin: ayirici genis birakiliyor. */
+QSplitter::handle {{ background: transparent; width: 22px; }}
 
 QMenu {{
     background: {surface};

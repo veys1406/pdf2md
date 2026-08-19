@@ -1,3 +1,5 @@
+<img src="assets/logo.png" width="88" alt="pdf2md" />
+
 # pdf2md
 
 PDF dosyalarını **LLM'e verilmeye uygun Markdown'a** çeviren Windows uygulaması.
@@ -107,6 +109,7 @@ uv sync --extra dev
 uv run python -m pdf2md          # arayüzü aç
 uv run pytest -q                 # testler
 uv run pyinstaller packaging/pdf2md.spec --noconfirm
+uv run python packaging/make_icon.py    # logoyu ve ikonları yeniden üret
 ```
 
 Proje düzeni:
@@ -116,7 +119,8 @@ src/pdf2md/
   core/      dönüşüm motoru, görsel işleme, post-process, model yönetimi
   gui/       ana pencere, kuyruk, önizleme, seçenekler, kurulum sihirbazı
   i18n/      arayüz metinleri
-packaging/   PyInstaller spec ve derleme betikleri
+packaging/   PyInstaller spec, derleme betikleri ve logo üreteci
+assets/      logo ve uygulama ikonu (packaging/make_icon.py ile üretilir)
 tests/       pytest
 ```
 

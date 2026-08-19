@@ -208,7 +208,7 @@ class SoftButton(QPushButton):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         bg, fg, border = self._palette_colors()
-        radius = 9.0
+        radius = 11.0
         rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
 
         path = QPainterPath()

@@ -96,6 +96,8 @@ CONFIRM_CANCEL_TITLE = "İptal"
 MENU_THEME_DARK = "Koyu tema"
 MENU_THEME_LIGHT = "Açık tema"
 MENU_MODELS = "Modeller…"
+MENU_LOGS = "Günlük klasörünü aç"
+MENU_SHORTCUTS = "Klavye kısayolları"
 MENU_ABOUT = "Hakkında"
 ABOUT_TEXT = (
     "pdf2md — PDF dosyalarını LLM dostu Markdown'a çevirir.\n\n"

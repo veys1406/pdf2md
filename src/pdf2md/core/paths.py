@@ -49,6 +49,26 @@ def is_frozen() -> bool:
     return getattr(sys, "frozen", False)
 
 
+def resource_path(*parts: str) -> Path:
+    """Paketle birlikte gelen varlik dosyasinin yolu (logo, ikon).
+
+    Paketlenmis derlemede dosyalar `sys._MEIPASS` altina aciliyor; gelistirme
+    ortaminda depo kokundeki `assets/` klasoru kullaniliyor.
+    """
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        return Path(base).joinpath(*parts)
+    return Path(__file__).resolve().parent.parent.parent.parent.joinpath(*parts)
+
+
+def icon_path() -> Path:
+    return resource_path("assets", "icon.ico")
+
+
+def logo_path() -> Path:
+    return resource_path("assets", "logo.png")
+
+
 _env_ready = False
 
 

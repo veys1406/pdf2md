@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# uv
+uv.lock.bak
+
+# Derleme ciktilari
+build/
+dist/
+*.spec.bak
+
+# Test PDF'leri ve donusum ciktilari (repoya girmez)
+samples/
+*.md.out
+*_images/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

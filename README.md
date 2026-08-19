@@ -23,11 +23,16 @@ Kurulum gerektirmez, internet bağlantısı istemez, dosyaların bilgisayarında
 
 ## Kurulum
 
-1. [Releases](https://github.com/veys1406/pdf2md/releases) sayfasından `pdf2md-kurulum.exe` dosyasını indir.
-2. Çalıştır, açılacağı klasörü seç. Kayıt defterine yazmaz, sistem klasörlerine dokunmaz.
-3. `pdf2md.exe` ile başlat.
+1. [Releases](https://github.com/veys1406/pdf2md/releases) sayfasından `pdf2md-0.1.0-windows.exe` dosyasını indir.
+2. Çift tıkla, dosyaların açılacağı klasörü seç (örneğin `C:\Programlar`). Kendi kendine açılan
+   bir arşivdir; kayıt defterine yazmaz, sistem klasörlerine dokunmaz, yönetici hakkı istemez.
+3. Açılan `pdf2md` klasöründeki **`pdf2md.exe`** ile başlat. İstersen masaüstüne kısayol çıkar.
 
-Kaldırmak için klasörü ve `%LOCALAPPDATA%\pdf2md` dizinini silmen yeterli.
+Windows SmartScreen "bilinmeyen yayımcı" uyarısı verebilir — imzalanmamış bir exe olduğu için
+normaldir; *Ek bilgi → Yine de çalıştır*.
+
+Kaldırmak için açtığın klasörü ve `%LOCALAPPDATA%\pdf2md` dizinini (modeller, günlükler)
+silmen yeterli.
 
 ### İlk açılış: modeller
 
@@ -74,10 +79,10 @@ ağ erişimi yalnızca ilk açılıştaki model indirmesi içindir.
 
 ## Komut satırı
 
-Aynı motor arayüzsüz de kullanılabilir:
+Aynı motor arayüzsüz de kullanılabilir. Paketlenmiş `pdf2md.exe` pencere modunda
+derlendiği için konsol çıktısı vermez; CLI geliştirme ortamında çalışır:
 
 ```powershell
-pdf2md.exe --help                                  # (geliştirme ortamında: uv run python -m pdf2md.cli)
 uv run python -m pdf2md.cli belge.pdf --cikti C:\ciktilar --sayfa 1-10
 uv run python -m pdf2md.cli --modelleri-indir      # modelleri indir ve çık
 ```

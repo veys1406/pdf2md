@@ -1,41 +1,57 @@
-"""Koyu/acik tema. QSS tek bir renk sozlugunden uretilir."""
+"""Tek renkli (siyah-beyaz) tema. QSS tek bir renk sozlugunden uretilir.
+
+Palette bilerek renksiz: vurgu rengi yok, ayrim yalnizca parlaklikla yapiliyor.
+Durum bilgisi (tamamlandi/hata) renk yerine sembol + parlaklik ile veriliyor;
+`queue_view` bu yuzden ✓ / ✕ isaretleri kullaniyor.
+
+Butonlar ve birakma alani QSS ile degil `animations.py` icindeki elle cizilen
+kontrollerle boyaniyor; QSS'te yalnizca onlarin kapsamadigi durumlar var.
+"""
 
 from __future__ import annotations
 
 DARK = {
-    "bg": "#14161a",
-    "surface": "#1b1e25",
-    "surface2": "#232733",
-    "surface3": "#2b3040",
-    "border": "#2e3340",
-    "text": "#e7eaf0",
-    "muted": "#98a1b2",
-    "accent": "#5b93f5",
-    "accent_hover": "#6ea1f7",
-    "accent_press": "#4a7fdd",
-    "on_accent": "#ffffff",
-    "success": "#4ade80",
-    "danger": "#f87171",
-    "warning": "#fbbf24",
-    "drop_bg": "#191d26",
+    "bg": "#0b0b0c",
+    "surface": "#121213",
+    "surface2": "#1a1a1c",
+    "surface3": "#242427",
+    "border": "#242427",
+    "border_strong": "#3a3a3e",
+    "text": "#f4f4f5",
+    "muted": "#8b8b91",
+    "disabled": "#55555a",
+    "focus": "#6f6f76",
+    # Vurgu = beyaz. Ana eylem butonu beyaz zemin, siyah yazi.
+    "accent": "#f4f4f5",
+    "accent_hover": "#ffffff",
+    "accent_press": "#c9c9cd",
+    "on_accent": "#0b0b0c",
+    # Durum tonlari: renk degil, parlaklik kademesi
+    "state_strong": "#ffffff",
+    "state_mid": "#b6b6bb",
+    "state_weak": "#75757b",
+    "drop_bg": "#101011",
 }
 
 LIGHT = {
-    "bg": "#f4f6f9",
+    "bg": "#f7f7f8",
     "surface": "#ffffff",
-    "surface2": "#eef1f6",
-    "surface3": "#e3e8f0",
-    "border": "#d5dbe5",
-    "text": "#171a21",
-    "muted": "#5e6878",
-    "accent": "#2563eb",
-    "accent_hover": "#3b76ef",
-    "accent_press": "#1d4fd0",
+    "surface2": "#f0f0f1",
+    "surface3": "#e4e4e6",
+    "border": "#e2e2e5",
+    "border_strong": "#c2c2c7",
+    "text": "#0c0c0d",
+    "muted": "#6b6b72",
+    "disabled": "#a5a5ab",
+    "focus": "#8c8c93",
+    "accent": "#0c0c0d",
+    "accent_hover": "#232326",
+    "accent_press": "#000000",
     "on_accent": "#ffffff",
-    "success": "#16a34a",
-    "danger": "#dc2626",
-    "warning": "#d97706",
-    "drop_bg": "#f8fafc",
+    "state_strong": "#0c0c0d",
+    "state_mid": "#4d4d54",
+    "state_weak": "#8f8f96",
+    "drop_bg": "#fbfbfc",
 }
 
 _QSS = """
@@ -48,92 +64,74 @@ _QSS = """
 QMainWindow, QDialog {{ background: {bg}; }}
 
 QLabel {{ background: transparent; }}
-QLabel#appTitle {{ font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }}
-QLabel#appSubtitle {{ color: {muted}; font-size: 12px; }}
-QLabel#sectionLabel {{ color: {muted}; font-size: 11px; font-weight: 600;
-                       text-transform: uppercase; letter-spacing: 0.6px; }}
-QLabel#dropTitle {{ font-size: 15px; font-weight: 600; }}
+QLabel#appTitle {{ font-size: 26px; font-weight: 300; letter-spacing: 5px; }}
+QLabel#appSubtitle {{ color: {muted}; font-size: 11px; letter-spacing: 2.4px;
+                      text-transform: uppercase; }}
+QLabel#sectionLabel {{ color: {muted}; font-size: 10px; font-weight: 600;
+                       text-transform: uppercase; letter-spacing: 1.4px; }}
+QLabel#dropTitle {{ font-size: 15px; font-weight: 500; letter-spacing: 0.3px; }}
 QLabel#dropHint {{ color: {muted}; font-size: 12px; }}
-QLabel#statTokens {{ font-size: 12px; color: {muted}; }}
+QLabel#statTokens {{ font-size: 12px; color: {muted}; letter-spacing: 0.2px; }}
+QLabel#hairline {{ background: {border}; }}
 
 /* -- kartlar -- */
 QFrame#card {{
     background: {surface};
     border: 1px solid {border};
-    border-radius: 10px;
+    border-radius: 14px;
 }}
 
-QFrame#dropZone {{
-    background: {drop_bg};
-    border: 2px dashed {border};
-    border-radius: 12px;
-}}
-QFrame#dropZone[hover="true"] {{
-    border: 2px dashed {accent};
-    background: {surface2};
-}}
+/* Birakma alani animations.DropZone tarafindan elle ciziliyor. */
+QFrame#dropZone {{ background: transparent; border: none; }}
 
-/* -- butonlar -- */
+/* -- butonlar --
+   Gorunur butonlar SoftButton; asagisi yalnizca duz QPushButton kalan yerler
+   (orn. dialog varsayilanlari) icin guvenlik agi. */
 QPushButton {{
     background: {surface2};
     border: 1px solid {border};
-    border-radius: 7px;
+    border-radius: 9px;
     padding: 7px 14px;
-    font-weight: 500;
 }}
 QPushButton:hover {{ background: {surface3}; }}
-QPushButton:pressed {{ background: {border}; }}
-QPushButton:disabled {{ color: {muted}; background: {surface}; }}
-
-QPushButton#primary {{
-    background: {accent};
-    border: 1px solid {accent};
-    color: {on_accent};
-    font-weight: 600;
-    padding: 9px 22px;
-}}
-QPushButton#primary:hover {{ background: {accent_hover}; border-color: {accent_hover}; }}
-QPushButton#primary:pressed {{ background: {accent_press}; }}
-QPushButton#primary:disabled {{ background: {surface2}; border-color: {border}; color: {muted}; }}
-
-QPushButton#danger {{ color: {danger}; }}
-QPushButton#iconButton {{ padding: 6px 10px; font-size: 14px; }}
+QPushButton:disabled {{ color: {disabled}; }}
 
 /* -- girisler -- */
 QLineEdit, QComboBox, QSpinBox {{
-    background: {surface2};
+    background: {surface};
     border: 1px solid {border};
-    border-radius: 7px;
-    padding: 6px 10px;
+    border-radius: 9px;
+    padding: 7px 11px;
     selection-background-color: {accent};
     selection-color: {on_accent};
 }}
-QLineEdit:focus, QComboBox:focus {{ border-color: {accent}; }}
+QLineEdit:hover, QComboBox:hover {{ border-color: {border_strong}; }}
+QLineEdit:focus, QComboBox:focus {{ border-color: {focus}; }}
 QLineEdit::placeholder {{ color: {muted}; }}
 QLineEdit:read-only {{ color: {muted}; }}
 
 /* Ok cizimi Fusion stiline birakiliyor: QSS ile ucgen kurmak (image:none +
    kenarlik) Qt'de kare bir blok cizdiriyor. */
-QComboBox::drop-down {{ border: none; width: 20px; margin-right: 4px; }}
+QComboBox::drop-down {{ border: none; width: 22px; margin-right: 4px; }}
 QComboBox QAbstractItemView {{
-    background: {surface2};
+    background: {surface};
     border: 1px solid {border};
-    border-radius: 7px;
-    selection-background-color: {accent};
-    selection-color: {on_accent};
-    padding: 4px;
+    border-radius: 10px;
+    selection-background-color: {surface3};
+    selection-color: {text};
+    padding: 5px;
     outline: none;
 }}
 
-QCheckBox {{ spacing: 8px; }}
+QCheckBox {{ spacing: 9px; }}
 QCheckBox::indicator {{
     width: 16px; height: 16px;
-    border: 1px solid {border};
-    border-radius: 4px;
-    background: {surface2};
+    border: 1px solid {border_strong};
+    border-radius: 5px;
+    background: {surface};
 }}
 QCheckBox::indicator:checked {{ background: {accent}; border-color: {accent}; }}
-QCheckBox::indicator:hover {{ border-color: {accent}; }}
+QCheckBox::indicator:hover {{ border-color: {focus}; }}
 
 /* -- tablo -- */
 QTableWidget {{
@@ -142,78 +140,85 @@ QTableWidget {{
     gridline-color: transparent;
     outline: none;
 }}
-QTableWidget::item {{ padding: 6px 8px; border-bottom: 1px solid {border}; }}
-QTableWidget::item:selected {{ background: {surface3}; color: {text}; }}
+QTableWidget::item {{ padding: 7px 10px; border-bottom: 1px solid {border}; }}
+QTableWidget::item:selected {{ background: {surface2}; color: {text}; }}
 QHeaderView::section {{
     background: {surface};
     color: {muted};
     border: none;
     border-bottom: 1px solid {border};
-    padding: 8px;
-    font-size: 11px;
+    padding: 9px 10px;
+    font-size: 10px;
     font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
 }}
 
 QProgressBar {{
     background: {surface3};
     border: none;
-    border-radius: 4px;
-    height: 8px;
+    border-radius: 3px;
+    height: 6px;
     text-align: center;
     color: transparent;
 }}
-QProgressBar::chunk {{ background: {accent}; border-radius: 4px; }}
+QProgressBar::chunk {{ background: {accent}; border-radius: 3px; }}
 
 /* -- sekmeler -- */
 QTabWidget::pane {{ border: none; background: transparent; }}
 QTabBar::tab {{
     background: transparent;
     color: {muted};
-    padding: 7px 14px;
-    margin-right: 2px;
-    border-radius: 7px;
-    font-weight: 500;
+    padding: 7px 2px;
+    margin-right: 20px;
+    border-bottom: 1px solid transparent;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
 }}
-QTabBar::tab:selected {{ background: {surface2}; color: {text}; }}
+QTabBar::tab:selected {{ color: {text}; border-bottom: 1px solid {accent}; }}
 QTabBar::tab:hover:!selected {{ color: {text}; }}
 
 QTextBrowser, QPlainTextEdit {{
     background: {surface};
     border: 1px solid {border};
-    border-radius: 8px;
-    padding: 10px;
-    selection-background-color: {accent};
-    selection-color: {on_accent};
+    border-radius: 14px;
+    padding: 14px;
+    selection-background-color: {surface3};
+    selection-color: {text};
 }}
 QPlainTextEdit {{ font-family: "Cascadia Mono", "Consolas", monospace; font-size: 12px; }}
 
 /* -- kaydirma cubugu -- */
-QScrollBar:vertical {{ background: transparent; width: 10px; margin: 2px; }}
-QScrollBar::handle:vertical {{ background: {surface3}; border-radius: 5px; min-height: 30px; }}
-QScrollBar::handle:vertical:hover {{ background: {muted}; }}
-QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 2px; }}
-QScrollBar::handle:horizontal {{ background: {surface3}; border-radius: 5px; min-width: 30px; }}
+QScrollBar:vertical {{ background: transparent; width: 10px; margin: 3px; }}
+QScrollBar::handle:vertical {{ background: {surface3}; border-radius: 5px; min-height: 34px; }}
+QScrollBar::handle:vertical:hover {{ background: {border_strong}; }}
+QScrollBar:horizontal {{ background: transparent; height: 10px; margin: 3px; }}
+QScrollBar::handle:horizontal {{ background: {surface3}; border-radius: 5px; min-width: 34px; }}
+QScrollBar::handle:horizontal:hover {{ background: {border_strong}; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; width: 0; }}
 QScrollBar::add-page, QScrollBar::sub-page {{ background: transparent; }}
 
-QSplitter::handle {{ background: transparent; width: 8px; }}
+QSplitter::handle {{ background: transparent; width: 14px; }}
 
 QMenu {{
-    background: {surface2};
+    background: {surface};
     border: 1px solid {border};
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 6px;
 }}
-QMenu::item {{ padding: 6px 22px 6px 12px; border-radius: 5px; }}
-QMenu::item:selected {{ background: {accent}; color: {on_accent}; }}
+QMenu::item {{ padding: 7px 24px 7px 14px; border-radius: 8px; }}
+QMenu::item:selected {{ background: {surface2}; color: {text}; }}
+QMenu::separator {{ height: 1px; background: {border}; margin: 5px 8px; }}
 
 QStatusBar {{ background: {bg}; color: {muted}; border-top: 1px solid {border}; }}
+QStatusBar::item {{ border: none; }}
 QToolTip {{
-    background: {surface3};
+    background: {surface2};
     color: {text};
     border: 1px solid {border};
-    border-radius: 6px;
-    padding: 5px 8px;
+    border-radius: 8px;
+    padding: 6px 9px;
 }}
 """
 
@@ -231,21 +236,21 @@ def preview_css(dark: bool) -> str:
     c = palette(dark)
     return f"""
     body {{ color: {c['text']}; font-family: "Segoe UI", sans-serif; font-size: 13px;
-            line-height: 1.55; }}
-    h1 {{ font-size: 20px; margin: 14px 0 8px; }}
-    h2 {{ font-size: 17px; margin: 12px 0 6px; }}
-    h3, h4, h5, h6 {{ font-size: 15px; margin: 10px 0 5px; }}
-    p {{ margin: 6px 0; }}
-    a {{ color: {c['accent']}; }}
-    code {{ background: {c['surface2']}; padding: 1px 5px; border-radius: 4px;
+            line-height: 1.65; }}
+    h1 {{ font-size: 21px; font-weight: 500; letter-spacing: -0.2px; margin: 16px 0 8px; }}
+    h2 {{ font-size: 17px; font-weight: 500; margin: 14px 0 6px; }}
+    h3, h4, h5, h6 {{ font-size: 15px; font-weight: 500; margin: 12px 0 5px; }}
+    p {{ margin: 7px 0; }}
+    a {{ color: {c['text']}; }}
+    code {{ background: {c['surface2']}; padding: 1px 5px; border-radius: 5px;
             font-family: "Cascadia Mono", Consolas, monospace; font-size: 12px; }}
-    pre {{ background: {c['surface2']}; padding: 10px; border-radius: 6px; }}
-    blockquote {{ border-left: 3px solid {c['border']}; margin-left: 0;
-                  padding-left: 12px; color: {c['muted']}; }}
-    table {{ border-collapse: collapse; margin: 10px 0; }}
-    th, td {{ border: 1px solid {c['border']}; padding: 5px 9px; }}
-    th {{ background: {c['surface2']}; }}
+    pre {{ background: {c['surface2']}; padding: 12px; border-radius: 10px; }}
+    blockquote {{ border-left: 2px solid {c['border_strong']}; margin-left: 0;
+                  padding-left: 14px; color: {c['muted']}; }}
+    table {{ border-collapse: collapse; margin: 12px 0; }}
+    th, td {{ border: 1px solid {c['border']}; padding: 6px 10px; }}
+    th {{ background: {c['surface2']}; font-weight: 500; }}
     img {{ max-width: 100%; }}
     hr {{ border: none; border-top: 1px solid {c['border']}; }}
-    p.meta {{ color: {c['muted']}; font-size: 11px; margin: 0 0 4px; }}
+    p.meta {{ color: {c['muted']}; font-size: 11px; letter-spacing: 0.4px; margin: 0 0 6px; }}
     """

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QMenu,
     QProgressBar,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
 )
@@ -22,6 +23,7 @@ from ..core.converter import ConversionResult
 from ..core.tokens import format_tokens
 from ..i18n import tr
 from . import theme
+from .animations import AnimatedProgressBar
 
 
 class JobState(str, Enum):
@@ -41,6 +43,21 @@ _LABELS = {
     JobState.CANCELLED: tr.STATUS_CANCELLED,
     JobState.SKIPPED: tr.STATUS_SKIPPED,
 }
+
+# Tema renksiz oldugu icin durum ayrimi sembol + parlaklikla yapiliyor:
+# yalnizca griyle yazilan bir "Hata" satiri gozden kaciyordu.
+_MARKS = {
+    JobState.WAITING: "·",
+    JobState.RUNNING: "◍",
+    JobState.DONE: "✓",
+    JobState.ERROR: "✕",
+    JobState.CANCELLED: "○",
+    JobState.SKIPPED: "–",
+}
+
+
+def format_status(state: JobState, text: str = "") -> str:
+    return f"{_MARKS[state]}  {text or _LABELS[state]}"
 
 
 @dataclass
@@ -84,7 +101,12 @@ class QueueTable(QTableWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         for col in range(1, len(self.COLUMNS)):
             header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
-        self.verticalHeader().setDefaultSectionSize(38)
+        self.verticalHeader().setDefaultSectionSize(44)
+        # Sutun basliklarinin toplam genisligi pencereyi zorlamasin: dar ekranda
+        # tablo kendi icinde kaysin.
+        header.setMinimumSectionSize(52)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        self.setMinimumWidth(0)
 
     # -- veri ---------------------------------------------------------
 
@@ -108,13 +130,12 @@ class QueueTable(QTableWidget):
             name.setToolTip(str(path))
             self.setItem(row, 0, name)
             self.setItem(row, 1, QTableWidgetItem("—"))
-            self.setItem(row, 2, QTableWidgetItem(tr.STATUS_WAITING))
+            self.setItem(row, 2, QTableWidgetItem(format_status(JobState.WAITING)))
 
-            bar = QProgressBar()
+            bar = AnimatedProgressBar()
             bar.setRange(0, 100)
             bar.setValue(0)
-            bar.setTextVisible(False)
-            bar.setFixedHeight(8)
+            bar.setFixedHeight(6)
             self.setCellWidget(row, 3, bar)
 
             self.setItem(row, 4, QTableWidgetItem("—"))
@@ -148,7 +169,7 @@ class QueueTable(QTableWidget):
                 job.error = ""
                 self._set_progress(i, 0)
             if job.state is JobState.WAITING:
-                self._set_text(i, 2, tr.STATUS_WAITING)
+                self._set_text(i, 2, format_status(JobState.WAITING))
                 self._paint_status(i)
 
     # -- durum guncellemeleri -----------------------------------------
@@ -157,7 +178,7 @@ class QueueTable(QTableWidget):
         job = self.jobs[row]
         job.state = JobState.RUNNING
         job.status_text = message
-        self._set_text(row, 2, message)
+        self._set_text(row, 2, format_status(JobState.RUNNING, message))
         self._set_progress(row, pct)
         self._paint_status(row)
 
@@ -165,7 +186,7 @@ class QueueTable(QTableWidget):
         job = self.jobs[row]
         if result is None:
             job.state = JobState.SKIPPED
-            self._set_text(row, 2, tr.STATUS_SKIPPED)
+            self._set_text(row, 2, format_status(JobState.SKIPPED))
             self._set_progress(row, 100)
             self._paint_status(row)
             return
@@ -179,7 +200,10 @@ class QueueTable(QTableWidget):
             job.markdown = ""
 
         self._set_text(row, 1, f"{result.pages_converted_count}/{result.page_count}")
-        self._set_text(row, 2, tr.STATUS_DONE + (" · OCR" if result.used_ocr else ""))
+        self._set_text(
+            row, 2,
+            format_status(JobState.DONE, tr.STATUS_DONE + (" · OCR" if result.used_ocr else "")),
+        )
         self._set_progress(row, 100)
         self._set_text(row, 4, f"{result.duration:.0f} sn")
         self._set_text(row, 5, format_tokens(result.md_tokens))
@@ -189,7 +213,7 @@ class QueueTable(QTableWidget):
         job = self.jobs[row]
         job.state = JobState.ERROR
         job.error = message
-        self._set_text(row, 2, tr.STATUS_ERROR)
+        self._set_text(row, 2, format_status(JobState.ERROR))
         item = self.item(row, 2)
         if item:
             item.setToolTip(message)
@@ -198,7 +222,7 @@ class QueueTable(QTableWidget):
 
     def set_cancelled(self, row: int) -> None:
         self.jobs[row].state = JobState.CANCELLED
-        self._set_text(row, 2, tr.STATUS_CANCELLED)
+        self._set_text(row, 2, format_status(JobState.CANCELLED))
         self._set_progress(row, 0)
         self._paint_status(row)
 
@@ -219,19 +243,21 @@ class QueueTable(QTableWidget):
 
     def _set_progress(self, row: int, pct: int) -> None:
         bar = self.cellWidget(row, 3)
-        if isinstance(bar, QProgressBar):
+        if isinstance(bar, AnimatedProgressBar):
+            bar.animate_to(pct)
+        elif isinstance(bar, QProgressBar):
             bar.setValue(pct)
 
     def _paint_status(self, row: int) -> None:
         colors = theme.palette(self._dark)
         state = self.jobs[row].state
         color = {
-            JobState.DONE: colors["success"],
-            JobState.ERROR: colors["danger"],
-            JobState.CANCELLED: colors["warning"],
-            JobState.SKIPPED: colors["muted"],
-            JobState.RUNNING: colors["accent"],
-        }.get(state, colors["muted"])
+            JobState.DONE: colors["state_strong"],
+            JobState.ERROR: colors["state_strong"],
+            JobState.CANCELLED: colors["state_weak"],
+            JobState.SKIPPED: colors["state_weak"],
+            JobState.RUNNING: colors["state_mid"],
+        }.get(state, colors["state_weak"])
         item = self.item(row, 2)
         if item:
             item.setForeground(QColor(color))

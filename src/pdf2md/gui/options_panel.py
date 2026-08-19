@@ -16,12 +16,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from ..core.options import ConversionOptions, ExistingFile, ImageMode, OcrMode
 from ..i18n import tr
+from .animations import SoftButton
 
 _PAGE_RANGE = re.compile(r"^\s*(\d+)\s*(?:-\s*(\d+)\s*)?$")
 
@@ -62,10 +64,10 @@ class OptionsPanel(QFrame):
         self.output_edit = QLineEdit()
         self.output_edit.setReadOnly(True)
         self.output_edit.setPlaceholderText(tr.OPT_OUTPUT_SAME)
-        self.browse_btn = QPushButton(tr.OPT_BROWSE)
+        self.browse_btn = SoftButton(tr.OPT_BROWSE)
         self.browse_btn.clicked.connect(self._pick_output)
-        self.clear_output_btn = QPushButton("✕")
-        self.clear_output_btn.setObjectName("iconButton")
+        self.clear_output_btn = SoftButton("✕", "quiet")
+        self.clear_output_btn.setFixedWidth(38)
         self.clear_output_btn.setToolTip(tr.OPT_OUTPUT_SAME)
         self.clear_output_btn.clicked.connect(self._clear_output)
 
@@ -132,6 +134,7 @@ class OptionsPanel(QFrame):
         grid.addWidget(checks, 1, 3)
         grid.setColumnStretch(0, 1)
 
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.set_options(opts)
 
     # -- degerler -----------------------------------------------------

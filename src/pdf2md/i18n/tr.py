@@ -10,6 +10,7 @@ APP_SUBTITLE = "PDF → Markdown"
 # -- birakma alani --------------------------------------------------------
 DROP_TITLE = "PDF dosyalarını buraya sürükleyin"
 DROP_HINT = "veya aşağıdaki butonlarla seçin · klasör de bırakabilirsiniz"
+DROP_TITLE_COMPACT = "Buraya daha fazla PDF bırakın"
 BTN_PICK_FILES = "PDF Seç"
 BTN_PICK_FOLDER = "Klasör Seç"
 BTN_CLEAR = "Listeyi Temizle"
@@ -35,6 +36,7 @@ CTX_RETRY = "Yeniden dene"
 CTX_REMOVE = "Listeden çıkar"
 
 # -- secenekler -----------------------------------------------------------
+OPT_SECTION = "SEÇENEKLER"
 OPT_OUTPUT = "Çıktı klasörü"
 OPT_OUTPUT_SAME = "PDF ile aynı klasör"
 OPT_BROWSE = "Gözat…"

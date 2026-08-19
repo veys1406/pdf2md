@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
-    QPushButton,
+    QSizePolicy,
     QTabWidget,
     QTextBrowser,
     QVBoxLayout,
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from ..i18n import tr
 from . import theme
+from .animations import SoftButton, fade_in
 from .queue_view import reveal
 
 
@@ -67,6 +68,8 @@ class PreviewPanel(QWidget):
         super().__init__(parent)
         self._dark = True
         self._md_path: Path | None = None
+        self._md = ""
+        self._info = ""
 
         self.tabs = QTabWidget()
 
@@ -84,41 +87,71 @@ class PreviewPanel(QWidget):
         self.info = QLabel(tr.PREVIEW_EMPTY)
         self.info.setObjectName("statTokens")
 
-        self.copy_btn = QPushButton(tr.BTN_COPY)
+        self.copy_btn = SoftButton(tr.BTN_COPY)
         self.copy_btn.clicked.connect(self._copy)
-        self.folder_btn = QPushButton(tr.BTN_SHOW_IN_FOLDER)
+        self.folder_btn = SoftButton(tr.BTN_SHOW_IN_FOLDER)
         self.folder_btn.clicked.connect(self._reveal)
 
-        bar = QHBoxLayout()
+        # Panel dar oldugunda tek satirda bilgi + iki buton sigmiyordu;
+        # bilgi ustte, butonlar altta sagda duruyor.
+        buttons = QHBoxLayout()
+        buttons.setContentsMargins(0, 0, 0, 0)
+        buttons.setSpacing(8)
+        buttons.addStretch(1)
+        buttons.addWidget(self.copy_btn)
+        buttons.addWidget(self.folder_btn)
+
+        bar = QVBoxLayout()
         bar.setContentsMargins(0, 0, 0, 0)
-        bar.addWidget(self.info, 1)
-        bar.addWidget(self.copy_btn)
-        bar.addWidget(self.folder_btn)
+        bar.setSpacing(8)
+        bar.addWidget(self.info)
+        bar.addLayout(buttons)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(10)
         layout.addWidget(self.tabs, 1)
         layout.addLayout(bar)
+
+        # Metin gorunumleri ve sekme cubugu kendi genisliklerini dayatinca panel
+        # 730 px minimum istiyordu ve dar ekranda pencerenin disina tasiyordu.
+        for widget in (self.tabs, self.html_view, self.raw_view):
+            widget.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+            widget.setMinimumWidth(0)
+        self.info.setWordWrap(True)
+        self.info.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(260)
 
         self.clear()
 
     def set_dark(self, dark: bool) -> None:
         self._dark = dark
         self.html_view.document().setDefaultStyleSheet(theme.preview_css(dark))
-        # Stil degisikliginin uygulanmasi icin icerigi yeniden yaz
-        self.html_view.setHtml(self.html_view.toHtml())
+        # toHtml() ile yeniden yazmak ise yaramiyor: QTextBrowser o cikti icine
+        # eski renkleri inline gomuyor, tema degisince tablo basliklari ve kod
+        # bloklari koyu zeminde koyu yaziyla kaliyordu. Kaynak markdown'dan
+        # bastan render ediliyor.
+        if self._md:
+            self.show_markdown(self._md, self._md_path, self._info, animate=False)
+        else:
+            self.html_view.setHtml("")
 
     def clear(self) -> None:
         self._md_path = None
+        self._md = ""
+        self._info = ""
         self.html_view.setHtml("")
         self.raw_view.setPlainText("")
         self.info.setText(tr.PREVIEW_EMPTY)
         self.copy_btn.setEnabled(False)
         self.folder_btn.setEnabled(False)
 
-    def show_markdown(self, md: str, md_path: Path | None, info: str = "") -> None:
+    def show_markdown(
+        self, md: str, md_path: Path | None, info: str = "", animate: bool = True
+    ) -> None:
         self._md_path = md_path
+        self._md = md
+        self._info = info
         self.raw_view.setPlainText(md)
 
         # Gorsel linkleri relatif; taban yolu vermezsek onizlemede gorunmezler
@@ -134,6 +167,10 @@ class PreviewPanel(QWidget):
 
         self.html_view.document().setDefaultStyleSheet(theme.preview_css(self._dark))
         self.html_view.setHtml(header + render_markdown(body))
+        # Icerik degisimi sicramasin: yeni belge kisa bir fade ile gelsin.
+        # Tema degisiminde animasyon yok: pencere zaten kendi gecisini yapiyor.
+        if animate:
+            fade_in(self.tabs, start=0.3)
         self.info.setText(info)
         self.copy_btn.setEnabled(bool(md))
         self.folder_btn.setEnabled(md_path is not None)

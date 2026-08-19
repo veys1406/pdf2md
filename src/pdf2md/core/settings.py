@@ -75,6 +75,14 @@ def save_dark_theme(dark: bool) -> None:
     _settings().setValue("dark_theme", dark)
 
 
+def load_options_expanded() -> bool:
+    return _bool(_settings().value("options_expanded"), False)
+
+
+def save_options_expanded(expanded: bool) -> None:
+    _settings().setValue("options_expanded", expanded)
+
+
 def load_window_geometry() -> bytes | None:
     value = _settings().value("geometry")
     return value if isinstance(value, (bytes, bytearray)) else None

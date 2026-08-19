@@ -27,6 +27,13 @@ from ..core.converter import Pdf2MdConverter
 from ..core.tokens import format_tokens, page_image_tokens, savings_percent
 from ..i18n import tr
 from . import theme
+from .animations import (
+    CollapsibleSection,
+    SoftButton,
+    fade_in,
+    fade_window_in,
+    pulse_opacity,
+)
 from .drop_zone import DropZone, collect_pdfs
 from .options_panel import OptionsPanel
 from .preview import PreviewPanel
@@ -41,8 +48,8 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(tr.APP_TITLE)
-        self.resize(1180, 760)
-        self.setMinimumSize(880, 600)
+        self.setMinimumSize(760, 520)
+        self._size_to_screen()
 
         self._dark = app_settings.load_dark_theme()
         self._opts = app_settings.load_options()
@@ -51,14 +58,34 @@ class MainWindow(QMainWindow):
         self._pool.setMaxThreadCount(1)  # kuyruk sirayla islenir
         self._worker: ConversionWorker | None = None
         self._models_checked = False
+        self._shown_once = False
 
         self._build_ui()
         self._apply_theme()
         self._restore_geometry()
         self._update_actions()
 
+    def _size_to_screen(self) -> None:
+        """Pencereyi ekrana sigacak sekilde ac.
+
+        Sabit 1180x760, %125 olcekli 1536x960 bir ekranda calisma alanindan
+        (mantiksal ~1229x730) buyuk kaliyordu: alt eylem cubugu ve sag panel
+        pencerenin disinda kaliyordu.
+        """
+        from PySide6.QtWidgets import QApplication
+
+        screen = QApplication.primaryScreen()
+        if screen is None:
+            self.resize(1180, 760)
+            return
+        area = screen.availableGeometry()
+        self.resize(min(1180, int(area.width() * 0.94)), min(770, int(area.height() * 0.94)))
+
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        if not self._shown_once:
+            self._shown_once = True
+            fade_window_in(self)
         if not self._models_checked:
             self._models_checked = True
             # Pencere cizildikten sonra ac: sihirbaz bos bir ekranin ustunde
@@ -105,8 +132,8 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         root = QWidget()
         layout = QVBoxLayout(root)
-        layout.setContentsMargins(16, 14, 16, 14)
-        layout.setSpacing(12)
+        layout.setContentsMargins(26, 18, 26, 18)
+        layout.setSpacing(14)
 
         layout.addWidget(self._build_header())
 
@@ -115,12 +142,20 @@ class MainWindow(QMainWindow):
         self.splitter.addWidget(self._build_right())
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 2)
-        self.splitter.setSizes([680, 480])
+        self.splitter.setChildrenCollapsible(False)
+        # Sabit [680, 480] dar ekranda sag paneli 260 px'e sikistiriyordu;
+        # oran pencere genisliginden hesaplaniyor.
+        width = max(self.width(), 900)
+        self.splitter.setSizes([int(width * 0.58), int(width * 0.42)])
         layout.addWidget(self.splitter, 1)
 
         self.options_panel = OptionsPanel(self._opts)
         self.options_panel.changed.connect(self._on_options_changed)
-        layout.addWidget(self.options_panel)
+        self.options_section = CollapsibleSection(
+            tr.OPT_SECTION, self.options_panel, app_settings.load_options_expanded()
+        )
+        self.options_section.toggled_open.connect(app_settings.save_options_expanded)
+        layout.addWidget(self.options_section)
 
         layout.addLayout(self._build_action_bar())
 
@@ -130,10 +165,11 @@ class MainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         header = QWidget()
         row = QHBoxLayout(header)
-        row.setContentsMargins(2, 0, 2, 0)
+        row.setContentsMargins(4, 2, 4, 2)
+        row.setSpacing(8)
 
         titles = QVBoxLayout()
-        titles.setSpacing(0)
+        titles.setSpacing(2)
         title = QLabel(tr.APP_TITLE)
         title.setObjectName("appTitle")
         subtitle = QLabel(tr.APP_SUBTITLE)
@@ -141,12 +177,12 @@ class MainWindow(QMainWindow):
         titles.addWidget(title)
         titles.addWidget(subtitle)
 
-        self.theme_btn = QPushButton()
-        self.theme_btn.setObjectName("iconButton")
+        self.theme_btn = SoftButton("", "quiet")
+        self.theme_btn.setFixedWidth(40)
         self.theme_btn.clicked.connect(self._toggle_theme)
 
-        self.menu_btn = QPushButton("⋯")
-        self.menu_btn.setObjectName("iconButton")
+        self.menu_btn = SoftButton("⋯", "quiet")
+        self.menu_btn.setFixedWidth(40)
         self.menu_btn.clicked.connect(self._show_menu)
 
         row.addLayout(titles)
@@ -159,7 +195,7 @@ class MainWindow(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(14)
 
         self.drop_zone = DropZone()
         self.drop_zone.files_dropped.connect(self._add_files)
@@ -167,11 +203,11 @@ class MainWindow(QMainWindow):
 
         buttons = QHBoxLayout()
         buttons.setSpacing(8)
-        pick_files = QPushButton(tr.BTN_PICK_FILES)
+        pick_files = SoftButton(tr.BTN_PICK_FILES)
         pick_files.clicked.connect(self._pick_files)
-        pick_folder = QPushButton(tr.BTN_PICK_FOLDER)
+        pick_folder = SoftButton(tr.BTN_PICK_FOLDER)
         pick_folder.clicked.connect(self._pick_folder)
-        self.clear_btn = QPushButton(tr.BTN_CLEAR)
+        self.clear_btn = SoftButton(tr.BTN_CLEAR)
         self.clear_btn.clicked.connect(self._clear_queue)
         buttons.addWidget(pick_files)
         buttons.addWidget(pick_folder)
@@ -200,12 +236,10 @@ class MainWindow(QMainWindow):
         self.summary_label = QLabel("")
         self.summary_label.setObjectName("statTokens")
 
-        self.convert_btn = QPushButton(tr.BTN_CONVERT)
-        self.convert_btn.setObjectName("primary")
+        self.convert_btn = SoftButton(tr.BTN_CONVERT, "primary")
         self.convert_btn.clicked.connect(self._start_conversion)
 
-        self.cancel_btn = QPushButton(tr.BTN_CANCEL)
-        self.cancel_btn.setObjectName("danger")
+        self.cancel_btn = SoftButton(tr.BTN_CANCEL)
         self.cancel_btn.clicked.connect(self._cancel_conversion)
         self.cancel_btn.setVisible(False)
 
@@ -217,16 +251,23 @@ class MainWindow(QMainWindow):
     # -- tema / ayarlar -------------------------------------------------
 
     def _apply_theme(self) -> None:
+        colors = theme.palette(self._dark)
         self.setStyleSheet(theme.stylesheet(self._dark))
-        self.theme_btn.setText("☀" if self._dark else "🌙")
+        self.theme_btn.setText("☾" if self._dark else "☀")
         self.theme_btn.setToolTip(tr.MENU_THEME_LIGHT if self._dark else tr.MENU_THEME_DARK)
         self.queue.set_dark(self._dark)
         self.preview.set_dark(self._dark)
+
+        # Elle cizilen kontroller QSS okumaz; palet onlara ayrica verilir.
+        self.drop_zone.set_colors(colors)
+        for button in self.findChildren(SoftButton):
+            button.set_colors(colors)
 
     def _toggle_theme(self) -> None:
         self._dark = not self._dark
         app_settings.save_dark_theme(self._dark)
         self._apply_theme()
+        pulse_opacity(self)
 
     def _show_menu(self) -> None:
         menu = QMenu(self)
@@ -250,8 +291,24 @@ class MainWindow(QMainWindow):
 
     def _restore_geometry(self) -> None:
         data = app_settings.load_window_geometry()
-        if data:
-            self.restoreGeometry(data)
+        if not data:
+            return
+        self.restoreGeometry(data)
+
+        # Kaydedilen boyut baska/buyuk bir ekrandan kalmis olabilir; ekrana
+        # sigmiyorsa geri kucult, yoksa alt eylem cubugu goruntunun disinda kalir.
+        from PySide6.QtWidgets import QApplication
+
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        if self.width() > area.width() or self.height() > area.height():
+            self.resize(
+                min(self.width(), int(area.width() * 0.94)),
+                min(self.height(), int(area.height() * 0.94)),
+            )
+            self.move(area.topLeft())
 
     def closeEvent(self, event) -> None:
         if self._worker is not None:
@@ -279,6 +336,7 @@ class MainWindow(QMainWindow):
     def _add_files(self, paths: list[Path]) -> None:
         added = self.queue.add_files(paths)
         if added:
+            fade_in(self.queue, start=0.3)
             self.statusBar().showMessage(f"{added} dosya eklendi", 3000)
         self._update_actions()
 
@@ -341,7 +399,7 @@ class MainWindow(QMainWindow):
         self.convert_btn.setVisible(not running)
         self.cancel_btn.setVisible(running)
         self.cancel_btn.setEnabled(running)
-        self.options_panel.setEnabled(not running)
+        self.options_section.setEnabled(not running)
         self.clear_btn.setEnabled(not running)
 
     # -- worker sinyalleri ----------------------------------------------
@@ -408,6 +466,7 @@ class MainWindow(QMainWindow):
         self.summary_label.setText(tr.queue_summary(done, total, format_tokens(tokens)))
 
     def _update_actions(self) -> None:
+        self.drop_zone.set_compact(bool(self.queue.jobs))
         has_pending = bool(self.queue.pending_jobs())
         self.convert_btn.setEnabled(has_pending and self._worker is None)
         self.clear_btn.setEnabled(bool(self.queue.jobs) and self._worker is None)

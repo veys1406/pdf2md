@@ -29,6 +29,8 @@ from PySide6.QtWidgets import (
 from ..core import models
 from ..core.paths import models_dir
 from ..i18n import tr
+from . import theme
+from .animations import AnimatedProgressBar, SoftButton, fade_in
 
 log = logging.getLogger(__name__)
 
@@ -138,6 +140,8 @@ class ModelsDialog(QDialog):
         self._timer.timeout.connect(self._tick)
 
         self._build_ui()
+        self._apply_colors()
+        fade_in(self, duration=180, start=0.2)
 
     # -- kurulum -------------------------------------------------------
 
@@ -160,7 +164,7 @@ class ModelsDialog(QDialog):
         self.location_label.setWordWrap(True)
         layout.addWidget(self.location_label)
 
-        self.progress = QProgressBar()
+        self.progress = AnimatedProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setVisible(False)
         layout.addWidget(self.progress)
@@ -174,15 +178,13 @@ class ModelsDialog(QDialog):
         self.total_label = QLabel("")
         self.total_label.setObjectName("statTokens")
 
-        self.download_btn = QPushButton(tr.BTN_DOWNLOAD)
-        self.download_btn.setObjectName("primary")
+        self.download_btn = SoftButton(tr.BTN_DOWNLOAD, "primary")
         self.download_btn.clicked.connect(self._start)
 
-        self.close_btn = QPushButton(tr.BTN_LATER if self._first_run else tr.BTN_CLOSE)
+        self.close_btn = SoftButton(tr.BTN_LATER if self._first_run else tr.BTN_CLOSE)
         self.close_btn.clicked.connect(self.reject)
 
-        self.cancel_btn = QPushButton(tr.BTN_CANCEL)
-        self.cancel_btn.setObjectName("danger")
+        self.cancel_btn = SoftButton(tr.BTN_CANCEL)
         self.cancel_btn.clicked.connect(self._cancel)
         self.cancel_btn.setVisible(False)
 
@@ -193,6 +195,14 @@ class ModelsDialog(QDialog):
         layout.addLayout(buttons)
 
         self._update_total()
+
+    def _apply_colors(self) -> None:
+        """Elle cizilen butonlara paleti dagit (QSS okumuyorlar)."""
+        parent = self.parent()
+        dark = getattr(parent, "_dark", True)
+        colors = theme.palette(bool(dark))
+        for button in self.findChildren(SoftButton):
+            button.set_colors(colors)
 
     def _make_row(self, spec: models.ModelSpec, index: int) -> _ModelRow:
         row = _ModelRow(spec, models.is_installed(spec))
@@ -266,7 +276,7 @@ class ModelsDialog(QDialog):
         done = max(0, current - self._base_bytes)
         # Tahmini boyut gercekte inenden kucuk kalabilir; %99'da tut, bitisi
         # worker'in finished sinyali belirlesin.
-        self.progress.setValue(min(99, int(done * 100 / target)))
+        self.progress.animate_to(min(99, int(done * 100 / target)))
 
     @Slot(str)
     def _on_status(self, title: str) -> None:
@@ -293,12 +303,13 @@ class ModelsDialog(QDialog):
             self._make_row(spec, self._rows_start + i)
             for i, spec in enumerate(models.SPECS)
         ]
+        self._apply_colors()
         self._update_total()
 
     @Slot()
     def _on_finished(self) -> None:
         self._downloaded_ok = True
-        self.progress.setValue(100)
+        self.progress.animate_to(100)
         self._teardown()
         self.status_label.setText(tr.MODELS_DONE)
         self.close_btn.setText(tr.BTN_CLOSE)
